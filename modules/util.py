@@ -3,8 +3,10 @@ from torch import nn
 import torch.nn.functional as F
 import torch
 
-from sync_batchnorm import SynchronizedBatchNorm2d as BatchNorm2d
-from sync_batchnorm import SynchronizedBatchNorm3d as BatchNorm3d
+# from sync_batchnorm import SynchronizedBatchNorm2d as BatchNorm2d
+# from sync_batchnorm import SynchronizedBatchNorm3d as BatchNorm3d
+from torch.nn import BatchNorm2d, BatchNorm3d
+
 
 import torch.nn.utils.spectral_norm as spectral_norm
 import re

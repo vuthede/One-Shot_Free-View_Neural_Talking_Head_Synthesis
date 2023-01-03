@@ -112,6 +112,7 @@ class OcclusionAwareGenerator(nn.Module):
         out = self.final(out)
         out = F.sigmoid(out)
 
+        print(f'max out :{out.max()}')
         output_dict["prediction"] = out
 
         return output_dict
