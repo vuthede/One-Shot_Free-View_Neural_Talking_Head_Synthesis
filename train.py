@@ -11,7 +11,11 @@ from torch.optim.lr_scheduler import MultiStepLR
 from sync_batchnorm import DataParallelWithCallback
 
 from frames_dataset import DatasetRepeater
+from tqdm import tqdm
 
+def collate_fn(batch):
+        batch = list(filter(lambda x: x is not None, batch))
+        return torch.utils.data.dataloader.default_collate(batch) 
 
 def train(config, generator, discriminator, kp_detector, he_estimator, checkpoint, log_dir, dataset, device_ids):
     train_params = config['train_params']
@@ -38,24 +42,32 @@ def train(config, generator, discriminator, kp_detector, he_estimator, checkpoin
 
     if 'num_repeats' in train_params or train_params['num_repeats'] != 1:
         dataset = DatasetRepeater(dataset, train_params['num_repeats'])
-    dataloader = DataLoader(dataset, batch_size=train_params['batch_size'], shuffle=True, num_workers=16, drop_last=True)
-
+    
+    dataloader = DataLoader(dataset, batch_size=train_params['batch_size'], shuffle=True, num_workers=16, drop_last=True, collate_fn=collate_fn)
+    print(f'Len dataloader :{len(dataloader)}')
     generator_full = GeneratorFullModel(kp_detector, he_estimator, generator, discriminator, train_params, estimate_jacobian=config['model_params']['common_params']['estimate_jacobian'])
     discriminator_full = DiscriminatorFullModel(kp_detector, generator, discriminator, train_params)
 
     if torch.cuda.is_available():
-        generator_full = DataParallelWithCallback(generator_full, device_ids=device_ids)
-        discriminator_full = DataParallelWithCallback(discriminator_full, device_ids=device_ids)
+        # generator_full = DataParallelWithCallback(generator_full, device_ids=device_ids)
+        # discriminator_full = DataParallelWithCallback(discriminator_full, device_ids=device_ids)
+        generator_full = torch.nn.DataParallel(generator_full)
+        discriminator_full = torch.nn.DataParallel(discriminator_full)
 
     with Logger(log_dir=log_dir, visualizer_params=config['visualizer_params'], checkpoint_freq=train_params['checkpoint_freq']) as logger:
         for epoch in trange(start_epoch, train_params['num_epochs']):
-            for x in dataloader:
+            itera = 0
+            for x in tqdm(dataloader):
+                itera += 1
+                # if itera>100:
+                #     break
                 losses_generator, generated = generator_full(x)
 
                 loss_values = [val.mean() for val in losses_generator.values()]
                 loss = sum(loss_values)
-
                 loss.backward()
+                if itera%10==0:
+                    print(f'Epoch:{epoch}. Iter: {itera}, Loss: {loss.item()}')
                 optimizer_generator.step()
                 optimizer_generator.zero_grad()
                 optimizer_kp_detector.step()

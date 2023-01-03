@@ -2,10 +2,14 @@ from torch import nn
 import torch
 import torch.nn.functional as F
 from modules.util import AntiAliasInterpolation2d, make_coordinate_grid_2d
+# from util import AntiAliasInterpolation2d, make_coordinate_grid_2d
+
 from torchvision import models
 import numpy as np
 from torch.autograd import grad
 import modules.hopenet as hopenet
+# import hopenet as hopenet
+
 from torchvision import transforms
 
 
@@ -263,7 +267,6 @@ class GeneratorFullModel(torch.nn.Module):
 
     def forward(self, x):
         kp_canonical = self.kp_extractor(x['source'])     # {'value': value, 'jacobian': jacobian}   
-
         he_source = self.he_estimator(x['source'])        # {'yaw': yaw, 'pitch': pitch, 'roll': roll, 't': t, 'exp': exp}
         he_driving = self.he_estimator(x['driving'])      # {'yaw': yaw, 'pitch': pitch, 'roll': roll, 't': t, 'exp': exp}
 
@@ -273,7 +276,7 @@ class GeneratorFullModel(torch.nn.Module):
 
         generated = self.generator(x['source'], kp_source=kp_source, kp_driving=kp_driving)
         generated.update({'kp_source': kp_source, 'kp_driving': kp_driving})
-
+        # import pdb; pdb.set_trace()
         loss_values = {}
 
         pyramide_real = self.pyramid(x['driving'])
@@ -395,7 +398,6 @@ class GeneratorFullModel(torch.nn.Module):
 
         return loss_values, generated
 
-
 class DiscriminatorFullModel(torch.nn.Module):
     """
     Merge all discriminator related updates into single model for better multi-gpu usage
@@ -444,3 +446,40 @@ class DiscriminatorFullModel(torch.nn.Module):
         loss_values['disc_gan'] = value_total
 
         return loss_values
+
+
+if __name__ == '__main__':
+    device = 'cuda'
+    import yaml
+    import sys
+    # sys.path.insert(0, "..")
+    from keypoint_detector import KPDetector, HEEstimator
+    from generator import OcclusionAwareGenerator
+    from discriminator import MultiScaleDiscriminator
+
+
+    with open("../config/vox-256.yaml") as f:
+        config = yaml.load(f, Loader=yaml.FullLoader)
+
+    kp_extractor = KPDetector(**config['model_params']['kp_detector_params'],
+                             **config['model_params']['common_params'])
+    kp_extractor.to(device)
+    he_estimator  = HEEstimator(**config['model_params']['he_estimator_params'],
+                               **config['model_params']['common_params'])
+    he_estimator.to(device)
+    
+    generator = OcclusionAwareGenerator(**config['model_params']['generator_params'],
+                                            **config['model_params']['common_params'])
+    generator.to(device)
+    discriminator = MultiScaleDiscriminator(**config['model_params']['discriminator_params'],
+                                            **config['model_params']['common_params'])
+    discriminator.to(device)
+    train_params = config['train_params']
+    G = GeneratorFullModel(kp_extractor=kp_extractor, he_estimator=he_estimator, generator=generator, discriminator=discriminator, train_params=train_params, estimate_jacobian=config['model_params']['common_params']['estimate_jacobian'])
+    G.eval()  
+    x = {}
+    x["source"] = torch.FloatTensor(1,3,256,256).to(device)
+    x["driving"] = torch.FloatTensor(1,3,256,256).to(device)
+    result = G(x)
+    # import pdb; pdb.set_trace()
+    print(f"End. ")

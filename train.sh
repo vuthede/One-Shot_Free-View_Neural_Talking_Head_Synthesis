@@ -1,0 +1,1 @@
+CUDA_VISIBLE_DEVICES=1,2,4 taskset --cpu-list 0-20 python3 run.py --config config/vox-256.yaml\

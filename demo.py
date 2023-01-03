@@ -25,7 +25,9 @@ if sys.version_info[0] < 3:
 def load_checkpoints(config_path, checkpoint_path, gen, cpu=False):
 
     with open(config_path) as f:
-        config = yaml.load(f)
+        # config = yaml.load(f)
+        config = yaml.safe_load(f)
+
 
     if gen == 'original':
         generator = OcclusionAwareGenerator(**config['model_params']['generator_params'],
@@ -246,7 +248,9 @@ if __name__ == "__main__":
     parser.add_argument("--driving_video", default='', help="path to driving video")
     parser.add_argument("--result_video", default='', help="path to output")
 
-    parser.add_argument("--gen", default="spade", choices=["original", "spade"])
+    # parser.add_argument("--gen", default="spade", choices=["original", "spade"])
+    parser.add_argument("--gen", default="original", choices=["original", "spade"])
+
  
     parser.add_argument("--relative", dest="relative", action="store_true", help="use relative or absolute keypoint coordinates")
     parser.add_argument("--adapt_scale", dest="adapt_scale", action="store_true", help="adapt movement scale based on convex hull of keypoints")
@@ -287,7 +291,7 @@ if __name__ == "__main__":
     generator, kp_detector, he_estimator = load_checkpoints(config_path=opt.config, checkpoint_path=opt.checkpoint, gen=opt.gen, cpu=opt.cpu)
 
     with open(opt.config) as f:
-        config = yaml.load(f)
+        config = yaml.safe_load(f)
     estimate_jacobian = config['model_params']['common_params']['estimate_jacobian']
     print(f'estimate jacobian: {estimate_jacobian}')
 

@@ -77,7 +77,7 @@ class OcclusionAwareGenerator(nn.Module):
         # print(out.shape)
         feature_3d = out.view(bs, self.reshape_channel, self.reshape_depth, h ,w) 
         feature_3d = self.resblocks_3d(feature_3d)
-
+        # print(f'[devu] feature 3d :{feature_3d.shape}')
         # Transforming feature representation according to deformation and occlusion
         output_dict = {}
         if self.dense_motion_network is not None:

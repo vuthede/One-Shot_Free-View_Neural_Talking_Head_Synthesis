@@ -56,17 +56,17 @@ model_params:
 
 train_params:
   num_epochs: 300
-  num_repeats: 75
+  num_repeats: 1 #75
   epoch_milestones: [180,]
   lr_generator: 2.0e-4
   lr_discriminator: 2.0e-4
   lr_kp_detector: 2.0e-4
   lr_he_estimator: 2.0e-4
   gan_mode: 'hinge'    # hinge or ls
-  batch_size: 32
+  batch_size: 16
   scales: [1, 0.5, 0.25, 0.125]
-  checkpoint_freq: 10
-  hopenet_snapshot: '/zlh/Project/deep-head-pose/checkpoints/hopenet_robust_alpha1.pkl'
+  checkpoint_freq: 1
+  hopenet_snapshot: '/home/ubuntu/vuthede/One-Shot_Free-View_Neural_Talking_Head_Synthesis/ckpt_hopenet/hopenet_robust_alpha1.pkl'
   transform_params:
     sigma_affine: 0.05
     sigma_tps: 0.005

@@ -82,7 +82,7 @@ class DenseMotionNetwork(nn.Module):
         gaussian_driving = kp2gaussian(kp_driving, spatial_size=spatial_size, kp_variance=0.01)
         gaussian_source = kp2gaussian(kp_source, spatial_size=spatial_size, kp_variance=0.01)
         heatmap = gaussian_driving - gaussian_source
-
+        # import pdb;pdb.set_trace()
         # adding background feature
         zeros = torch.zeros(heatmap.shape[0], 1, spatial_size[0], spatial_size[1], spatial_size[2]).type(heatmap.type())
         heatmap = torch.cat([zeros, heatmap], dim=1)
